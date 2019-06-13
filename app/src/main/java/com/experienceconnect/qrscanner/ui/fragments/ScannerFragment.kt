@@ -1,6 +1,7 @@
 package com.experienceconnect.qrscanner.ui.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
@@ -37,10 +38,6 @@ class ScannerFragment : Fragment() {
 
     private val vm: ScannerViewModel by viewModel()
 
-    companion object {
-        fun newInstance() = ScannerFragment()
-    }
-
     private var lensFacing = CameraX.LensFacing.BACK
     private lateinit var viewFinder: TextureView
     private lateinit var cameraPreview: CameraPreview
@@ -58,23 +55,19 @@ class ScannerFragment : Fragment() {
         binding.btnSwitchCamera.setOnClickListener {
             switchCamera()
         }
+        binding.btnPause.setOnClickListener {
+            vm.pause = !vm.pause
+        }
         viewFinder = binding.cameraPreview
         viewFinder.post {
             startCamera()
         }
 
-        viewFinder.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            updateTransform()
-        }
         return binding.root
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
 
-
-    }
-
+    @SuppressLint("RestrictedApi")
     private fun switchCamera() {
         lensFacing = if (CameraX.LensFacing.FRONT == lensFacing) {
             CameraX.LensFacing.BACK
@@ -112,7 +105,6 @@ class ScannerFragment : Fragment() {
             parent.addView(viewFinder, 0)
 
             viewFinder.surfaceTexture = it.surfaceTexture
-            updateTransform()
         }
 
         // Setup image analysis pipeline that computes average pixel luminance in real time
@@ -128,69 +120,28 @@ class ScannerFragment : Fragment() {
             setTargetRotation(viewFinder.display.rotation)
         }.build()
 
-        val imageAnalyzer = ImageAnalysis(analyzerConfig)
-        imageAnalyzer.analyzer = LuminosityAnalyzer(metrics.widthPixels, metrics.heightPixels)
+        val imageAnalyzer = ImageAnalysis(analyzerConfig).also {
+            it.analyzer = ImageAnalysis.Analyzer { image, rotationDegrees ->
+                if (vm.pause) return@Analyzer
 
-        CameraX.bindToLifecycle(this, preview, imageAnalyzer)
-    }
+                val currentTimeStamp = System.currentTimeMillis()
+                if (currentTimeStamp - vm.lastTimeStamp <= vm.interval) return@Analyzer
 
-    private fun updateTransform() {
-        // TODO: Implement camera viewfinder transformations
-    }
-
-
-    /**
-     * Our custom image analysis class.
-     *
-     * <p>All we need to do is override the function `analyze` with our desired operations. Here,
-     * we compute the average luminosity of the image by looking at the Y plane of the YUV frame.
-     */
-    private class LuminosityAnalyzer(val w:Int,val h:Int) : ImageAnalysis.Analyzer {
-        val TEMPTS = TimeUnit.SECONDS.toMillis(1)
-        private var lastTimeStamp = 0L
-        val options = FirebaseVisionBarcodeDetectorOptions.Builder()
-            .setBarcodeFormats(
-                FirebaseVisionBarcode.FORMAT_QR_CODE,
-                FirebaseVisionBarcode.FORMAT_AZTEC
-            )
-            .build()
-        val detector = FirebaseVision.getInstance()
-            .getVisionBarcodeDetector(options)
-
-
-        private fun ByteBuffer.toByteArray(): ByteArray {
-            rewind()    // Rewind the buffer to zero
-            val data = ByteArray(remaining())
-            get(data)   // Copy the buffer into a byte array
-            return data // Return the byte array
-        }
-        override fun analyze(image: ImageProxy, rotationDegrees: Int) {
-
-            val currentTimeStamp = System.currentTimeMillis()
-            if (currentTimeStamp - lastTimeStamp > TEMPTS) {
-                Log.d("TEST", "analyze")
                 val buffer = image.planes[0].buffer
-
-                // Extract image data from callback object
                 val data = buffer.toByteArray()
-
-
-                image.image?.let {img->
-                
-                    Log.d("TEST", "w ${img.width} h: ${img.height}")
+                image.image?.let { img ->
                     val metadata = FirebaseVisionImageMetadata.Builder()
                         .setWidth(img.width)
                         .setHeight(img.height)
                         .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
                         .setRotation(FirebaseVisionImageMetadata.ROTATION_90)
                         .build()
-                    val mm =
-                        FirebaseVisionImage.fromByteArray(data,metadata)
-                    detector.detectInImage(mm).addOnSuccessListener { barcodes ->
+
+                    detector.detectInImage(FirebaseVisionImage.fromByteArray(data, metadata))
+                        .addOnSuccessListener { barcodes ->
                             Log.d("TEST", "addOnSuccessListener")
                             barcodes.forEach { barcode ->
-                                val valueType = barcode.getValueType();
-                                when (valueType) {
+                                when (barcode.valueType) {
                                     FirebaseVisionBarcode.TYPE_WIFI ->
                                         Log.d("TEST", "addOnSuccessListener $barcode")
                                 }
@@ -200,11 +151,28 @@ class ScannerFragment : Fragment() {
                             Log.d("TEST", "addOnFailureListener ${it.message}")
                         }
                 }
-                lastTimeStamp = currentTimeStamp
+                vm.lastTimeStamp = currentTimeStamp
             }
-
         }
+
+        CameraX.bindToLifecycle(this, preview, imageAnalyzer)
     }
 
 
+    private val options = FirebaseVisionBarcodeDetectorOptions.Builder()
+        .setBarcodeFormats(
+            FirebaseVisionBarcode.FORMAT_QR_CODE,
+            FirebaseVisionBarcode.FORMAT_AZTEC
+        )
+        .build()
+    private val detector = FirebaseVision.getInstance()
+        .getVisionBarcodeDetector(options)
+
+
+    private fun ByteBuffer.toByteArray(): ByteArray {
+        rewind()    // Rewind the buffer to zero
+        val data = ByteArray(remaining())
+        get(data)   // Copy the buffer into a byte array
+        return data // Return the byte array
+    }
 }
