@@ -1,9 +1,6 @@
 package com.experienceconnect.qrscanner.ui.fragments
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -15,18 +12,14 @@ import androidx.navigation.Navigation
 import com.experienceconnect.qrscanner.databinding.ScannerFragmentBinding
 import com.experienceconnect.qrscanner.ui.viewmodels.ScannerViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
-import android.graphics.Point
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.*
+import android.widget.TextView
 import androidx.camera.core.*
 import com.experienceconnect.qrscanner.R
-import com.experienceconnect.qrscanner.function.camera.CameraPreview
 import java.lang.Exception
 import java.nio.ByteBuffer
-import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayList
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions
 import com.google.firebase.ml.vision.FirebaseVision
@@ -40,7 +33,7 @@ class ScannerFragment : Fragment() {
 
     private var lensFacing = CameraX.LensFacing.BACK
     private lateinit var viewFinder: TextureView
-    private lateinit var cameraPreview: CameraPreview
+    private lateinit var logTextView: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -62,7 +55,7 @@ class ScannerFragment : Fragment() {
         viewFinder.post {
             startCamera()
         }
-
+        logTextView =binding.tvLog
         return binding.root
     }
 
@@ -139,12 +132,10 @@ class ScannerFragment : Fragment() {
 
                     detector.detectInImage(FirebaseVisionImage.fromByteArray(data, metadata))
                         .addOnSuccessListener { barcodes ->
-                            Log.d("TEST", "addOnSuccessListener")
+                            Log.d("TEST", "addOnSuccessListener ${barcodes.size}")
                             barcodes.forEach { barcode ->
-                                when (barcode.valueType) {
-                                    FirebaseVisionBarcode.TYPE_WIFI ->
-                                        Log.d("TEST", "addOnSuccessListener $barcode")
-                                }
+                                Log.d("TEST","raw: ${barcode.rawValue}")
+                                logTextView.text = barcode.rawValue
                             }
                         }
                         .addOnFailureListener {

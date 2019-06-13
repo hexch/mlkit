@@ -51,8 +51,12 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/btn_switch_camera"/>
             <TextView
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:textColor="@android:color/black"
+                    android:background="@android:color/darker_gray"
                     android:id="@+id/tv_log"
-                    android:alpha="0.5"
+                    android:alpha="0.3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:lines="4"
