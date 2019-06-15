@@ -12,6 +12,8 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.navigation.Navigation
 import com.experienceconnect.qrscanner.R
+import com.experienceconnect.qrscanner.data.entities.Settings
+import com.experienceconnect.qrscanner.databinding.MainFragmentBinding
 import com.experienceconnect.qrscanner.ui.viewmodels.MainViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 
@@ -27,17 +29,18 @@ class MainFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val v =inflater.inflate(R.layout.main_fragment, container, false)
-        v.findViewById<Button>(R.id.btn_scan).setOnClickListener{
+        val binding = MainFragmentBinding.inflate(inflater,container,false)
+        binding.viewModel = vm
+        binding.btnScan.setOnClickListener{
             Navigation.findNavController(it).navigate(R.id.action_mainFragment_to_scannerFragment)
         }
-        return v
+
+        return binding.root
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-
-
+        view?.findViewById<View>(R.id.btn_scan)?.requestFocus()
     }
 
 }

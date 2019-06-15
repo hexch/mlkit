@@ -55,7 +55,7 @@ class ScannerFragment : Fragment() {
         viewFinder.post {
             startCamera()
         }
-        logTextView =binding.tvLog
+        logTextView = binding.tvLog
         return binding.root
     }
 
@@ -117,24 +117,18 @@ class ScannerFragment : Fragment() {
             it.analyzer = ImageAnalysis.Analyzer { image, rotationDegrees ->
                 if (vm.pause) return@Analyzer
 
-                val currentTimeStamp = System.currentTimeMillis()
-                if (currentTimeStamp - vm.lastTimeStamp <= vm.interval) return@Analyzer
+                if (!vm.isTimeout()) return@Analyzer
 
-                val buffer = image.planes[0].buffer
-                val data = buffer.toByteArray()
                 image.image?.let { img ->
-                    val metadata = FirebaseVisionImageMetadata.Builder()
-                        .setWidth(img.width)
-                        .setHeight(img.height)
-                        .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
-                        .setRotation(FirebaseVisionImageMetadata.ROTATION_90)
-                        .build()
-
-                    detector.detectInImage(FirebaseVisionImage.fromByteArray(data, metadata))
+                    val visionImg = FirebaseVisionImage.fromMediaImage(
+                        img,
+                        FirebaseVisionImageMetadata.ROTATION_90
+                    )
+                    detector.detectInImage(visionImg)
                         .addOnSuccessListener { barcodes ->
                             Log.d("TEST", "addOnSuccessListener ${barcodes.size}")
                             barcodes.forEach { barcode ->
-                                Log.d("TEST","raw: ${barcode.rawValue}")
+                                Log.d("TEST", "raw: ${barcode.rawValue}")
                                 logTextView.text = barcode.rawValue
                             }
                         }
@@ -142,7 +136,6 @@ class ScannerFragment : Fragment() {
                             Log.d("TEST", "addOnFailureListener ${it.message}")
                         }
                 }
-                vm.lastTimeStamp = currentTimeStamp
             }
         }
 
@@ -158,12 +151,4 @@ class ScannerFragment : Fragment() {
         .build()
     private val detector = FirebaseVision.getInstance()
         .getVisionBarcodeDetector(options)
-
-
-    private fun ByteBuffer.toByteArray(): ByteArray {
-        rewind()    // Rewind the buffer to zero
-        val data = ByteArray(remaining())
-        get(data)   // Copy the buffer into a byte array
-        return data // Return the byte array
-    }
 }

@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools">
+
     <data>
-        <variable name="viewModel" type="com.experienceconnect.qrscanner.ui.viewmodels.MainViewModel"/>
+
+        <variable
+                name="viewModel"
+                type="com.experienceconnect.qrscanner.ui.viewmodels.MainViewModel"/>
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -10,14 +15,61 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             tools:context=".ui.fragments.MainFragment">
-        <Button
-                android:id="@+id/btn_scan"
-                android:text="Scan"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                app:layout_constraintBottom_toBottomOf="parent"
+
+
+        <TextView
+                android:id="@+id/label_scan_interval"
+                android:text="スキャン間隔秒数："
+                android:layout_width="wrap_content"
+                android:textSize="20sp"
+                android:layout_height="wrap_content"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"/>
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias=".2"
+                app:layout_constraintVertical_bias=".3"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <EditText
+                android:inputType="number"
+                android:text="@={viewModel.interval}"
+                android:textSize="20sp"
+                android:id="@+id/edit_scan_interval"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toEndOf="@id/label_scan_interval"
+                app:layout_constraintBaseline_toBaselineOf="@id/label_scan_interval"/>
+
+        <TextView
+                android:layout_marginTop="10dp"
+                android:id="@+id/label_server"
+                android:text="API："
+                android:layout_width="wrap_content"
+                android:textSize="20sp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/label_scan_interval"
+                app:layout_constraintEnd_toEndOf="@id/label_scan_interval"
+                />
+        <EditText
+                android:text="@={viewModel.server}"
+                android:id="@+id/edit_server"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toEndOf="@id/label_server"
+                app:layout_constraintBaseline_toBaselineOf="@id/label_server"/>
+
+
+        <Button
+                android:id="@+id/btn_scan"
+                android:text="開始"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintWidth_percent=".5"
+                app:layout_constraintTop_toBottomOf="@id/label_server"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
